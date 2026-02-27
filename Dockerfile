@@ -31,10 +31,13 @@ RUN git clone --depth 1 --branch ${LLAMA_CPP_TAG} https://github.com/ggml-org/ll
 #   Narrow this down to your HPC's specific GPU arch for a faster/smaller build
 RUN cmake -B build \
     -DGGML_CUDA=ON \
+    -DGGML_CUDA_NO_VMM=ON \
     -DCMAKE_CUDA_ARCHITECTURES="80;86;89;90" \
     -DLLAMA_CURL=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build build --config Release -j$(nproc)
+    -DCMAKE_BUILD_TYPE=Release
+
+RUN cmake --build build --config Release -j$(nproc) || \
+    (echo "BUILD FAILED" && false)
 
 # =============================================================================
 # Stage 2: Runtime
