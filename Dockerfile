@@ -39,6 +39,10 @@ RUN cmake -B build \
 RUN cmake --build build --config Release -j$(nproc) || \
     (echo "BUILD FAILED" && false)
 
+# Print all shared library dependencies for runtime planning
+RUN echo "=== llama-server dependencies ===" && ldd build/bin/llama-server && \
+    echo "=== llama-cli dependencies ===" && ldd build/bin/llama-cli
+
 # =============================================================================
 # Stage 2: Runtime
 # Minimal image with only runtime CUDA libs and compiled binaries
@@ -49,6 +53,9 @@ FROM nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4 \
     curl \
+    libgomp1 \
+    libstdc++6 \
+    libgcc-s1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy compiled binaries from build stage
@@ -61,4 +68,4 @@ ENV LD_LIBRARY_PATH=/app:$LD_LIBRARY_PATH
 WORKDIR /app
 
 # Default entrypoint — override at runtime with e.g. llama-server, llama-cli, etc.
-ENTRYPOINT ["/app/llama-cli", "/app/llama-server"]
+ENTRYPOINT ["/app/llama-cli"]
